@@ -13,6 +13,9 @@ bash:
 console:
 	docker compose exec php php bin/console
 
+test:
+	docker compose exec php php bin/phpunit
+
 composer:
 	docker compose exec php composer $(filter-out $@,$(MAKECMDGOALS))
 
