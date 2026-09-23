@@ -9,7 +9,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler(bus: 'event.bus')]
-final class OrderCreatedHandler
+final class SendOrderConfirmation
 {
     public function __construct(private LoggerInterface $logger)
     {
@@ -18,6 +18,6 @@ final class OrderCreatedHandler
     public function __invoke(OrderCreated $event): void
     {
         // here should be email sender.
-        $this->logger->info('OrderCreated Event was handled for order', ['orderId' => $event->order->getId()]);
+        $this->logger->info('Send order created event for order', ['orderId' => $event->order->getId()]);
     }
 }

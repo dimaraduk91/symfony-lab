@@ -4,7 +4,41 @@ declare(strict_types=1);
 
 namespace App\Ordering\Application\Command\CreateOrder;
 
-final class CreateOrderHandler
-{
+use App\Ordering\Domain\Event\OrderCreated;
+use App\Ordering\Domain\Model\Order;
+use App\Ordering\Domain\Model\OrderItem;
+use App\Ordering\Domain\Repository\OrderRepository;
+use App\Shared\Flusher;
+use Doctrine\Common\Collections\ArrayCollection;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Uid\UuidV7;
 
+final readonly class CreateOrderHandler
+{
+    public function __construct(private OrderRepository $repository, private MessageBusInterface $eventBus, private Flusher $flush)
+    {
+    }
+
+    public function handle(CreateOrder $order): Order
+    {
+        $created = new Order(
+            (new UuidV7())->toString(),
+            $order->customerId,
+            $order->currency,
+            new ArrayCollection()
+        );
+
+        foreach ($order->items as $item) {
+            $created->addItem(new OrderItem($item->productId, $item->quantity, $item->price));
+        }
+
+
+        $this->repository->create($created);
+
+        $this->flush->flush();
+
+        $this->eventBus->dispatch(new OrderCreated($created));
+
+        return $created;
+    }
 }

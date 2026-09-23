@@ -19,5 +19,30 @@ services:
     App\:
         resource: '../src/'
 
+#    App\Ordering\Application\CreateOrder:
+#        arguments:
+#            $eventBus: '@event.bus'
+
+framework:
+    messenger:
+        buses:
+            event.bus:
+                default_middleware:
+                    allow_no_handlers: true
+        transports:
+            events:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+        routing:
+            'App\Ordering\Domain\Event\OrderCreated': events
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+#doctrine:
+#    orm:
+#        mappings:
+#            Ordering:
+#                is_bundle: false
+#                type: attribute
+#                dir: '%kernel.project_dir%/src/Ordering/Domain/Model'
+#                prefix: 'App\Ordering\Domain\Model'
+#                alias: Ordering
