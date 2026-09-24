@@ -20,6 +20,7 @@ final class OrderControllerTest extends WebTestCase
                 'customerId' => 'customer-123',
                 'items' => [[
                     'productId' => 'product-456',
+                    'sellerId' => 'seller-789',
                     'quantity' => 2,
                     'price' => 1999,
                 ]],
@@ -38,7 +39,7 @@ final class OrderControllerTest extends WebTestCase
             'POST',
             '/api/orders',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: '{"customerId":"customer-123","items":[{"productId":"","quantity":0,"price":0}]}',
+            content: '{"customerId":"customer-123","items":[{"productId":"","sellerId":"","quantity":0,"price":0}]}',
         );
 
         self::assertResponseStatusCodeSame(422);

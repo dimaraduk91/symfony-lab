@@ -20,8 +20,12 @@ class OrderItem
         #[ORM\ManyToOne(targetEntity: Order::class, inversedBy: 'items')]
         #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
         private Order $order,
-        #[ORM\Column(type: 'string', length: 36)]
-        private string $productId,
+        #[ORM\ManyToOne(targetEntity: Product::class, inversedBy: 'items')]
+        #[ORM\JoinColumn(nullable: false)]
+        private Product $product,
+        #[ORM\ManyToOne(targetEntity: Seller::class, inversedBy: 'items')]
+        #[ORM\JoinColumn(nullable: false)]
+        private Seller $seller,
         #[ORM\Column(type: 'integer')]
         private int $quantity,
         Money $price,
@@ -69,8 +73,10 @@ class OrderItem
 
     public function getProductId(): string
     {
-        return $this->productId;
+        return $this->product->getId();
     }
+
+    public function getSellerId(): string { return $this->seller->getId(); }
 
     public function total(): Money
     {

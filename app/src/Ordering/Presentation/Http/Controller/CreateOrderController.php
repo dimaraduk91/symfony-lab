@@ -44,6 +44,7 @@ final class CreateOrderController
             'items' => array_map(
                 static fn (OrderItem $item): array => [
                     'productId' => $item->getProductId(),
+                    'sellerId' => $item->getSellerId(),
                     'quantity' => $item->getQuantity(),
                     'price' => $item->getPrice()->getTotalAmount(),
                 ],

@@ -12,6 +12,9 @@ final class CreateOrderItem
         #[Assert\NotBlank]
         #[Assert\Length(max: 64)]
         public string $productId,
+        #[Assert\NotBlank]
+        #[Assert\Length(max: 64)]
+        public string $sellerId,
         #[Assert\Positive]
         public int $quantity,
         #[Assert\Positive]

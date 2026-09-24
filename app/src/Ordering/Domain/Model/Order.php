@@ -26,8 +26,9 @@ class Order
         #[ORM\Id]
         #[ORM\Column(type: 'string', length: 36)]
         private readonly string               $id,
-        #[ORM\Column(type: 'string', length: 36)]
-        private readonly string                 $customerId,
+        #[ORM\ManyToOne(targetEntity: Customer::class, inversedBy: 'orders')]
+        #[ORM\JoinColumn(nullable: false)]
+        private readonly Customer $customer,
         Money $total,
         #[ORM\OneToMany(
             targetEntity: OrderItem::class,
@@ -57,7 +58,7 @@ class Order
 
     public function getCustomerId(): string
     {
-        return $this->customerId;
+        return $this->customer->getId();
     }
 
     public function getTotal(): Money
@@ -70,13 +71,13 @@ class Order
         return $this->items;
     }
 
-    public function addItem(string $productId, int $quantity, Money $price): void
+    public function addItem(Product $product, Seller $seller, int $quantity, Money $price): void
     {
         if ($this->status !== OrderStatus::Pending) {
             throw new \DomainException('Order cannot be modified.');
         }
 
-        $item = new OrderItem($this, $productId, $quantity, $price);
+        $item = new OrderItem($this, $product, $seller, $quantity, $price);
         $this->total = $this->total->add($item->total());
         $this->items->add($item);
     }

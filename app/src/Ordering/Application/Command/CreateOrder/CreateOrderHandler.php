@@ -6,16 +6,20 @@ namespace App\Ordering\Application\Command\CreateOrder;
 
 use App\Ordering\Domain\Event\OrderCreated;
 use App\Ordering\Domain\Model\Order;
+use App\Ordering\Domain\Model\Customer;
+use App\Ordering\Domain\Model\Product;
+use App\Ordering\Domain\Model\Seller;
 use App\Ordering\Domain\Repository\OrderRepository;
 use App\Shared\Domain\Money;
 use App\Shared\Flusher;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Uid\UuidV7;
 
 final readonly class CreateOrderHandler
 {
-    public function __construct(private OrderRepository $repository, private MessageBusInterface $eventBus, private Flusher $flush)
+    public function __construct(private OrderRepository $repository, private MessageBusInterface $eventBus, private Flusher $flush, private EntityManagerInterface $entityManager)
     {
     }
 
@@ -23,14 +27,15 @@ final readonly class CreateOrderHandler
     {
         $created = new Order(
             (new UuidV7())->toString(),
-            $order->customerId,
+            $this->entityManager->getReference(Customer::class, $order->customerId),
             new Money(0, $order->currency->value),
             new ArrayCollection()
         );
 
         foreach ($order->items as $item) {
             $created->addItem(
-                $item->productId,
+                $this->entityManager->getReference(Product::class, $item->productId),
+                $this->entityManager->getReference(Seller::class, $item->sellerId),
                 $item->quantity,
                 new Money($item->price, $order->currency->value),
             );
