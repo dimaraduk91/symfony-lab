@@ -6,8 +6,8 @@ namespace App\Ordering\Application\Command\CreateOrder;
 
 use App\Ordering\Domain\Event\OrderCreated;
 use App\Ordering\Domain\Model\Order;
-use App\Ordering\Domain\Model\OrderItem;
 use App\Ordering\Domain\Repository\OrderRepository;
+use App\Shared\Domain\Money;
 use App\Shared\Flusher;
 use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -24,20 +24,23 @@ final readonly class CreateOrderHandler
         $created = new Order(
             (new UuidV7())->toString(),
             $order->customerId,
-            $order->currency,
+            new Money(0, $order->currency->value),
             new ArrayCollection()
         );
 
         foreach ($order->items as $item) {
-            $created->addItem(new OrderItem($item->productId, $item->quantity, $item->price));
+            $created->addItem(
+                $item->productId,
+                $item->quantity,
+                new Money($item->price, $order->currency->value),
+            );
         }
-
 
         $this->repository->create($created);
 
         $this->flush->flush();
 
-        $this->eventBus->dispatch(new OrderCreated($created));
+        $this->eventBus->dispatch(new OrderCreated($created->getId()));
 
         return $created;
     }

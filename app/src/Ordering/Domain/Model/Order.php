@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Ordering\Domain\Model;
 
+use App\Ordering\Domain\Exception\OrderCannotBeCancelled;
+use App\Ordering\Domain\Exception\OrderCannotBeCompleted;
+use App\Ordering\Domain\Exception\OrderCannotBePaid;
+use App\Shared\Domain\Money;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\DBAL\Types\DateTimeImmutableType;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -16,8 +19,8 @@ class Order
     #[ORM\Column(enumType: OrderStatus::class)]
     private OrderStatus $status = OrderStatus::Pending;
 
-    #[ORM\Column(type: 'integer')]
-    private int $amount = 0;
+    #[ORM\Embedded(class: Money::class, columnPrefix: false)]
+    private Money $total;
 
     public function __construct(
         #[ORM\Id]
@@ -25,8 +28,7 @@ class Order
         private readonly string               $id,
         #[ORM\Column(type: 'string', length: 36)]
         private readonly string                 $customerId,
-        #[ORM\Column(type: 'string', length: 3)]
-        private readonly string $currency,
+        Money $total,
         #[ORM\OneToMany(
             targetEntity: OrderItem::class,
             mappedBy: 'order',
@@ -40,6 +42,7 @@ class Order
         private \DateTimeImmutable $updatedAt = new \DateTimeImmutable(),
     )
     {
+        $this->total = $total;
     }
 
     public function getId(): string
@@ -57,9 +60,9 @@ class Order
         return $this->customerId;
     }
 
-    public function getCurrency(): string
+    public function getTotal(): Money
     {
-        return $this->currency;
+        return $this->total;
     }
 
     public function getItems(): Collection
@@ -67,20 +70,15 @@ class Order
         return $this->items;
     }
 
-    public function addItem(OrderItem $item): void
+    public function addItem(string $productId, int $quantity, Money $price): void
     {
-        if ($this->items->contains($item)) {
-            return;
+        if ($this->status !== OrderStatus::Pending) {
+            throw new \DomainException('Order cannot be modified.');
         }
-        $this->amount += $item->getPrice() * $item->getQuantity();
 
+        $item = new OrderItem($this, $productId, $quantity, $price);
+        $this->total = $this->total->add($item->total());
         $this->items->add($item);
-        $item->setOrder($this);
-    }
-
-    public function getAmount(): int
-    {
-        return $this->amount;
     }
 
     public function getCreatedAt(): \DateTimeImmutable
@@ -91,5 +89,29 @@ class Order
     public function getUpdatedAt(): \DateTimeImmutable
     {
         return $this->updatedAt;
+    }
+
+    public function pay(): void
+    {
+        if ($this->status !== OrderStatus::Pending) {
+            throw new OrderCannotBePaid();
+        }
+        $this->status = OrderStatus::Paid;
+    }
+
+    public function cancel(): void
+    {
+        if ($this->status !== OrderStatus::Pending) {
+            throw new OrderCannotBeCancelled();
+        }
+        $this->status = OrderStatus::Cancelled;
+    }
+
+    public function complete(): void
+    {
+        if ($this->status !== OrderStatus::Paid) {
+            throw new OrderCannotBeCompleted();
+        }
+        $this->status = OrderStatus::Completed;
     }
 }

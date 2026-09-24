@@ -29,8 +29,8 @@ final class GetOrderAction
         return new JsonResponse([
             "id" => $order->getId(),
             "status" => $order->getStatus(),
-            "total" => $order->getAmount(),
-            "currency" => $order->getCurrency(),
+            "total" => $order->getTotal()->getTotalAmount(),
+            "currency" => $order->getTotal()->getCurrency(),
         ]);
     }
 }

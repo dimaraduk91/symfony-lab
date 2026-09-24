@@ -24,6 +24,12 @@ doctrine:
                 dir: '%kernel.project_dir%/src/Ordering/Domain/Model'
                 prefix: 'App\Ordering\Domain\Model'
                 alias: Ordering
+            Shared:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Shared/Domain'
+                prefix: 'App\Shared\Domain'
+                alias: Shared
         controller_resolver:
             auto_mapping: false
 

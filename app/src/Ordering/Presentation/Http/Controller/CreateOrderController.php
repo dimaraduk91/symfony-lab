@@ -38,18 +38,18 @@ final class CreateOrderController
         return new JsonResponse([
             'id' => $created->getId(),
             'customerId' => $created->getCustomerId(),
-            'currency' => $created->getCurrency(),
+            'currency' => $created->getTotal()->getCurrency(),
             'status' => $created->getStatus(),
 //            'items' => $created->getItems()->toArray(),
             'items' => array_map(
                 static fn (OrderItem $item): array => [
                     'productId' => $item->getProductId(),
                     'quantity' => $item->getQuantity(),
-                    'price' => $item->getPrice(),
+                    'price' => $item->getPrice()->getTotalAmount(),
                 ],
                 $created->getItems()->toArray(),
             ),
-            'amount' => $created->getAmount(),
+            'amount' => $created->getTotal()->getTotalAmount(),
             'createdAt' => $created->getCreatedAt()->format(DATE_ATOM),
             'updatedAt' => $created->getUpdatedAt()
         ]);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ordering\Domain\Model;
 
+use App\Shared\Domain\Money;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -16,20 +17,30 @@ class OrderItem
     private int $id = 0;
 
     public function __construct(
+        #[ORM\ManyToOne(targetEntity: Order::class, inversedBy: 'items')]
+        #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+        private Order $order,
         #[ORM\Column(type: 'string', length: 36)]
         private string $productId,
         #[ORM\Column(type: 'integer')]
-        private int    $quantity = 0,
-        #[ORM\Column(type: 'integer')]
-        private int    $price = 0,
+        private int $quantity,
+        Money $price,
     )
     {
+        if ($this->quantity <= 0 || $price->getTotalAmount() <= 0) {
+            throw new \LogicException('Quantity and price must be greater than 0');
+        }
+
+        if ($price->getCurrency() !== $this->order->getTotal()->getCurrency()) {
+            throw new \DomainException('Item price currency must match order currency.');
+        }
+
+        $this->price = $price->getTotalAmount();
     }
 
+    #[ORM\Column(type: 'integer')]
+    private int $price;
 
-    #[ORM\ManyToOne(targetEntity: Order::class, inversedBy: 'items')]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    private Order $order;
 
     public function getId(): int
     {
@@ -46,9 +57,9 @@ class OrderItem
         return $this->order;
     }
 
-    public function getPrice(): int
+    public function getPrice(): Money
     {
-        return $this->price;
+        return new Money($this->price, $this->order->getTotal()->getCurrency());
     }
 
     public function getQuantity(): int
@@ -59,5 +70,10 @@ class OrderItem
     public function getProductId(): string
     {
         return $this->productId;
+    }
+
+    public function total(): Money
+    {
+        return $this->getPrice()->multiply($this->quantity);
     }
 }
