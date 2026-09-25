@@ -14,6 +14,8 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'orders')]
+#[ORM\Index(name: 'IDX_ORDERS_STATUS_CREATED_AT', columns: ['status', 'created_at'])]
+#[ORM\Index(name: 'IDX_ORDERS_CREATED_AT', columns: ['created_at'])]
 class Order
 {
     #[ORM\Column(enumType: OrderStatus::class)]

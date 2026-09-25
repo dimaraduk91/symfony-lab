@@ -8,6 +8,32 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class OrderControllerTest extends WebTestCase
 {
+    public function testSearchRejectsInvalidFilters(): void
+    {
+        $client = static::createClient();
+
+        $client->request('GET', '/api/orders/search?status=unknown&limit=101');
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertJsonStringEqualsJsonString(
+            '{"error":"status must be one of: pending, paid, completed, cancelled."}',
+            (string) $client->getResponse()->getContent(),
+        );
+    }
+
+    public function testSearchRejectsAnInvalidDateRange(): void
+    {
+        $client = static::createClient();
+
+        $client->request('GET', '/api/orders/search?from=2026-09-02&to=2026-09-01');
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertJsonStringEqualsJsonString(
+            '{"error":"from must be earlier than or equal to to."}',
+            (string) $client->getResponse()->getContent(),
+        );
+    }
+
     public function testCreateAcceptsAValidOrderPayload(): void
     {
         $client = static::createClient();
