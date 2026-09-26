@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ordering\Application\EventHandler;
 
-use App\Ordering\Domain\Event\OrderCreated;
+use App\Ordering\Application\IntegrationEvent\OrderCreated;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -18,8 +18,7 @@ final class UpdateOrderStatistics
     public function __invoke(OrderCreated $event): void
     {
         // here should be email sender.
-        $this->logger->info('Update order statistics with created event for order', ['orderId' => $event->order->getId()]);
-        dump('gg');
+        $this->logger->info('Update order statistics.', ['orderId' => $event->orderId]);
     }
 
 }

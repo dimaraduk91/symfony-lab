@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     curl \
     libpq-dev \
+    librabbitmq-dev \
     libicu-dev \
     libzip-dev \
     libonig-dev \
@@ -14,6 +15,8 @@ RUN apt-get update && apt-get install -y \
         zip \
         mbstring \
         opcache \
+    && pecl install amqp \
+    && docker-php-ext-enable amqp \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

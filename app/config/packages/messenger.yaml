@@ -9,6 +9,9 @@ framework:
                 retry_strategy:
                     max_retries: 3
                     multiplier: 2
+            events:
+                dsn: '%env(EVENTS_TRANSPORT_DSN)%'
+                serializer: messenger.transport.symfony_serializer
             failed: 'doctrine://default?queue_name=failed'
             # sync: 'sync://'
 
@@ -16,11 +19,15 @@ framework:
 
         buses:
             messenger.bus.default: []
+            event.bus:
+                default_middleware:
+                    allow_no_handlers: true
 
         routing:
             Symfony\Component\Mailer\Messenger\SendEmailMessage: async
             Symfony\Component\Notifier\Message\ChatMessage: async
             Symfony\Component\Notifier\Message\SmsMessage: async
+            App\Ordering\Application\IntegrationEvent\OrderCreated: events
 
             # Route your messages to the transports
             # 'App\Message\YourMessage': async

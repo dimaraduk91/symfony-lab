@@ -19,6 +19,8 @@ services:
     App\:
         resource: '../src/'
 
+    App\Ordering\Application\Outbox\Outbox: '@App\Ordering\Infrastructure\Outbox\DoctrineOutbox'
+
 #    App\Ordering\Application\CreateOrder:
 #        arguments:
 #            $eventBus: '@event.bus'
@@ -28,15 +30,32 @@ services:
 
 framework:
     messenger:
+        serializer:
+            default_serializer: messenger.transport.symfony_serializer
+            symfony_serializer:
+                format: json
+                context: { }
+        failure_transport: failed
         buses:
             event.bus:
                 default_middleware:
                     allow_no_handlers: true
         transports:
-            events:
+#            events:
+#                dsn: '%env(EVENTS_TRANSPORT_DSN)%'
+            async:
                 dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
-        routing:
-            'App\Ordering\Domain\Event\OrderCreated': events
+                serializer: messenger.transport.symfony_serializer
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000
+                    multiplier: 2
+                    max_delay: 10000
+                    jitter: 0.1
+            failed:
+                dsn: 'doctrine://default?queue_name=failed'
+#        routing:
+#            'App\Ordering\Domain\Event\OrderCreated': events
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

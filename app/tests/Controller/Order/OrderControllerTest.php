@@ -44,6 +44,7 @@ final class OrderControllerTest extends WebTestCase
             server: ['CONTENT_TYPE' => 'application/json'],
             content: json_encode([
                 'customerId' => 'customer-123',
+                'currency' => 'USD',
                 'items' => [[
                     'productId' => 'product-456',
                     'sellerId' => 'seller-789',
@@ -65,9 +66,70 @@ final class OrderControllerTest extends WebTestCase
             'POST',
             '/api/orders',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: '{"customerId":"customer-123","items":[{"productId":"","sellerId":"","quantity":0,"price":0}]}',
+            content: '{"customerId":"customer-123","currency":"USD","items":[{"productId":"","sellerId":"","quantity":0,"price":0}]}',
         );
 
         self::assertResponseStatusCodeSame(422);
+        self::assertResponseHeaderSame('content-type', 'application/json');
+        self::assertJsonStringEqualsJsonString(
+            '{
+                "error": "Validation failed.",
+                "errors": {
+                    "items[0].productId": ["This value should not be blank."],
+                    "items[0].sellerId": ["This value should not be blank."],
+                    "items[0].quantity": ["This value should be positive."],
+                    "items[0].price": ["This value should be positive."]
+                }
+            }',
+            (string) $client->getResponse()->getContent(),
+        );
+    }
+
+    public function testCreateReturnsTheFieldForPayloadTypeErrors(): void
+    {
+        $client = static::createClient();
+
+        $client->request(
+            'POST',
+            '/api/orders',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: '{"customerId":123,"currency":"USD","items":[{"productId":"product-456","sellerId":"seller-789","quantity":"two","price":1999}]}',
+        );
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertJsonStringEqualsJsonString(
+            '{
+                "error": "Validation failed.",
+                "errors": {
+                    "customerId": ["This value should be of type string."],
+                    "items[0].quantity": ["This value should be of type int."]
+                }
+            }',
+            (string) $client->getResponse()->getContent(),
+        );
+    }
+
+    public function testCreateReturnsErrorsForMissingRequiredFields(): void
+    {
+        $client = static::createClient();
+
+        $client->request(
+            'POST',
+            '/api/orders',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: '{"currency":"USD","items":[]}',
+        );
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertResponseHeaderSame('content-type', 'application/json');
+        self::assertJsonStringEqualsJsonString(
+            '{
+                "error": "Validation failed.",
+                "errors": {
+                    "customerId": ["This value should be of type string."]
+                }
+            }',
+            (string) $client->getResponse()->getContent(),
+        );
     }
 }

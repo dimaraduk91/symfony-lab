@@ -9,6 +9,7 @@ use App\Ordering\Application\Command\CreateOrder\CreateOrderHandler;
 use App\Ordering\Domain\Model\OrderItem;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -19,14 +20,14 @@ final class CreateOrderController
     }
 
     #[Route('/api/orders', name: "create_order", methods: ['POST'])]
-    public function handle(#[MapRequestPayload] CreateOrder $order, CreateOrderHandler $handler): JsonResponse
+    public function handle(#[MapRequestPayload] CreateOrder $order, Request $request, CreateOrderHandler $handler): JsonResponse
     {
-        /**
-         * // send email
-         */
-
+        $idempotencyKey = trim((string) $request->headers->get('Idempotency-Key'));
+        if ($idempotencyKey === '' || mb_strlen($idempotencyKey) > 128) {
+            return new JsonResponse(['error' => 'Idempotency-Key header is required and must not exceed 128 characters.'], 400);
+        }
         try {
-            $created = $handler->handle($order);
+            $created = $handler->handle($order, $idempotencyKey);
             $this->logger->info('Order created', ['order' => $created->getId()]);
 
         } catch (\Exception $exception) {
@@ -52,7 +53,7 @@ final class CreateOrderController
             ),
             'amount' => $created->getTotal()->getTotalAmount(),
             'createdAt' => $created->getCreatedAt()->format(DATE_ATOM),
-            'updatedAt' => $created->getUpdatedAt()
+            'updatedAt' => $created->getUpdatedAt()->format(DATE_ATOM),
         ]);
     }
 }

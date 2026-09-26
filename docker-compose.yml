@@ -9,8 +9,12 @@ services:
       - ./app:/var/www/html
     environment:
       DATABASE_URL: "postgresql://symfony:symfony@db:5432/symfony?serverVersion=16&charset=utf8"
+      MESSENGER_TRANSPORT_DSN: "amqp://symfony:symfony@rabbitmq:5672/%2f/async"
+      EVENTS_TRANSPORT_DSN: "amqp://symfony:symfony@rabbitmq:5672/%2f/events"
     depends_on:
       db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   nginx:
@@ -41,5 +45,22 @@ services:
       timeout: 5s
       retries: 10
 
+  rabbitmq:
+    image: rabbitmq:4.1-management-alpine
+    container_name: symfony_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: symfony
+      RABBITMQ_DEFAULT_PASS: symfony
+    ports:
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
 volumes:
   postgres_data:
+  rabbitmq_data:

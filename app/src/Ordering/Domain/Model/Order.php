@@ -43,6 +43,8 @@ class Order
         private \DateTimeImmutable $createdAt = new \DateTimeImmutable(),
         #[ORM\Column(type: 'datetimetz_immutable')]
         private \DateTimeImmutable $updatedAt = new \DateTimeImmutable(),
+        #[ORM\Column(name: 'idempotency_key', type: 'string', length: 128, unique: true, nullable: true)]
+        private readonly ?string $idempotencyKey = null,
     )
     {
         $this->total = $total;

@@ -16,8 +16,6 @@ final class CreateOrder
         #[Assert\NotBlank]
         #[Assert\Length(max: 64)]
         public string $customerId,
-        #[Assert\NotBlank]
-        #[Assert\Length(max: 3)]
         public Currency $currency,
         #[Assert\Count(min: 1)]
         #[Assert\All([new Assert\Type(CreateOrderItem::class)])]
