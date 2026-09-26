@@ -7,14 +7,14 @@ namespace App\Internals\UseCase;
 
 use Psr\Log\LoggerInterface;
 
-final class StockValidator implements OrderValidator
+final class SellerValidator implements OrderValidator
 {
     public function __construct(private LoggerInterface $logger)
     {
     }
 
-    public function validate(FakeOrder $order): void
+    public function validate(FakeOrderEvent $order): void
     {
-        $this->logger->info('--==StockValidator==--');
+        $this->logger->info('--==SellerValidator==--', ['order' => $order->id]);
     }
 }

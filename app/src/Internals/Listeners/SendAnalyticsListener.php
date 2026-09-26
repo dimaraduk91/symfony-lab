@@ -6,8 +6,10 @@ namespace App\Internals\Listeners;
 
 use App\Internals\Event\FakeEvent;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
-final class UpdateStatisticListener
+#[AsEventListener]
+final class SendAnalyticsListener
 {
     public function __construct(private LoggerInterface $logger)
     {
@@ -15,6 +17,6 @@ final class UpdateStatisticListener
 
     public function __invoke(FakeEvent $event): void
     {
-        $this->logger->info('execute UpdateStatisticListener', ['eventId' => $event->id]);
+        $this->logger->info('execute SendAnalyticsListener', ['eventId' => $event->id]);
     }
 }

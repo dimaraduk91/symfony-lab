@@ -6,5 +6,7 @@ namespace App\Internals\Event;
 
 final class FakeEvent
 {
-
+    public function __construct(public string $id)
+    {
+    }
 }
