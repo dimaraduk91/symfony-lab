@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
         zip \
         mbstring \
         opcache \
+        sockets \
     && pecl install amqp rdkafka \
     && docker-php-ext-enable amqp rdkafka \
     && apt-get clean \

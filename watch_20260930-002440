@@ -1,0 +1,7 @@
+listen queue:         80                                                                                                                                                                                         
+max listen queue:     97                                                                                                                                                                                         
+idle processes:       0                                                                                                                                                                                          
+active processes:     20                                                                                                                                                                                         
+total processes:      20                                                                                                                                                                                         
+max active processes: 20                                                                                                                                                                                         
+max children reached: 11                                                                                                                                                                                         
