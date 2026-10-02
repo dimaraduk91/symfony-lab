@@ -1,5 +1,42 @@
 # Symfony Lab
 
+## RoadRunner
+
+HTTP requests are handled by nginx and proxied to RoadRunner. The `php` service
+keeps PHP-FPM available for CLI commands and later FPM/RoadRunner comparisons.
+
+Install dependencies and the platform-specific RoadRunner binary once, then
+start the stack:
+
+```bash
+make install
+make rr-install
+make build
+```
+
+For subsequent starts use `make up`. The application is available at
+<http://localhost:8080>.
+
+RoadRunner is also published directly on <http://localhost:8081>. The direct
+start target stops nginx and PHP-FPM, starts RoadRunner and its dependencies,
+then the benchmark sends traffic straight to RoadRunner:
+
+```bash
+make rr-direct-up
+make rr-benchmark
+```
+
+The benchmark target passes `BASE_URL=http://localhost:8081` to k6. Running
+`k6 run benchmark.js` without that variable keeps using nginx on port 8080.
+
+Useful commands:
+
+```bash
+make rr-version
+make rr-logs
+make down
+```
+
 ## Kafka Lab
 
 Kafka is used here as a durable `order.events` domain-event stream. RabbitMQ remains the transport for asynchronous commands/jobs: Kafka is not simply RabbitMQ with higher throughput, and it does not replace RabbitMQ in this project.

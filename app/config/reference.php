@@ -125,6 +125,32 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     ...<string, DefinitionType|AliasType|PrototypeType|StackType|ArgumentsType|null>
  * }
  * @psalm-type ExtensionType = array<string, mixed>
+ * @psalm-type BaldinofRoadRunnerConfig = array{
+ *     kernel_reboot?: array{
+ *         strategy?: list<scalar|Param|null>,
+ *         allowed_exceptions?: list<scalar|Param|null>,
+ *         max_jobs?: scalar|Param|null, // Only used when `reboot_kernel.strategy: max_jobs`. Maximum numbers of jobs before kernel reboot // Default: 1000
+ *         max_jobs_dispersion?: scalar|Param|null, // Only used when `reboot_kernel.strategy: max_jobs`. Dispersion persent // Default: 0.2
+ *         memory_threshold_mb?: scalar|Param|null, // Only used when `reboot_kernel.strategy: memory`. Memory threshold in megabytes // Default: 128
+ *     },
+ *     middlewares?: list<scalar|Param|null>,
+ *     interceptors?: list<scalar|Param|null>,
+ *     default_integrations?: bool|Param, // Default: true
+ *     metrics?: array{
+ *         enabled?: bool|Param, // Default: false
+ *         collect?: list<array{ // Default: []
+ *             type?: "counter"|"histogram"|"gauge"|"summary"|Param,
+ *             help?: scalar|Param|null, // Default: null
+ *             namespace?: scalar|Param|null, // Default: null
+ *             subsystem?: scalar|Param|null, // Default: null
+ *             labels?: list<scalar|Param|null>,
+ *             buckets?: list<float|Param>,
+ *         }>,
+ *     },
+ *     kv?: array{
+ *         storages?: list<scalar|Param|null>,
+ *     },
+ * }
  * @psalm-type FrameworkConfig = array{
  *     secret?: scalar|Param|null,
  *     http_method_override?: bool|Param, // Set true to enable support for the '_method' request parameter to determine the intended HTTP method on POST requests. // Default: false
@@ -1530,6 +1556,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     imports?: ImportsConfig,
  *     parameters?: ParametersConfig,
  *     services?: ServicesConfig,
+ *     baldinof_road_runner?: BaldinofRoadRunnerConfig,
  *     framework?: FrameworkConfig,
  *     doctrine?: DoctrineConfig,
  *     doctrine_migrations?: DoctrineMigrationsConfig,
@@ -1543,6 +1570,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         imports?: ImportsConfig,
  *         parameters?: ParametersConfig,
  *         services?: ServicesConfig,
+ *         baldinof_road_runner?: BaldinofRoadRunnerConfig,
  *         framework?: FrameworkConfig,
  *         doctrine?: DoctrineConfig,
  *         doctrine_migrations?: DoctrineMigrationsConfig,
@@ -1560,6 +1588,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         imports?: ImportsConfig,
  *         parameters?: ParametersConfig,
  *         services?: ServicesConfig,
+ *         baldinof_road_runner?: BaldinofRoadRunnerConfig,
  *         framework?: FrameworkConfig,
  *         doctrine?: DoctrineConfig,
  *         doctrine_migrations?: DoctrineMigrationsConfig,
@@ -1574,6 +1603,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         imports?: ImportsConfig,
  *         parameters?: ParametersConfig,
  *         services?: ServicesConfig,
+ *         baldinof_road_runner?: BaldinofRoadRunnerConfig,
  *         framework?: FrameworkConfig,
  *         doctrine?: DoctrineConfig,
  *         doctrine_migrations?: DoctrineMigrationsConfig,

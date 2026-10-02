@@ -1,6 +1,8 @@
 import http from 'k6/http';
 import { Counter } from 'k6/metrics';
 
+const baseUrl = (__ENV.BASE_URL || 'http://localhost:8080').replace(/\/$/, '');
+
 const status0 = new Counter('status_0');
 const status2xx = new Counter('status_2xx');
 const status3xx = new Counter('status_3xx');
@@ -12,15 +14,51 @@ const status503 = new Counter('status_503');
 const status504 = new Counter('status_504');
 const statusOther5xx = new Counter('status_other_5xx');
 
+// export const options = {
+//     vus: 500,
+//     // stages: [
+//     //     { duration: '10s', target: 50 },
+//     //     { duration: '30s', target: 50 },
+//     //     { duration: '5s', target: 0 },
+//     // ],
+//     // duration: '60s',
+//     // duration: '1m',
+//     // stages: [
+//     //     { duration: '30s', target: 100 },
+//     //     { duration: '30s', target: 200 },
+//     //     { duration: '30s', target: 300 },
+//     //     { duration: '30s', target: 500 },
+//     //     { duration: '30s', target: 0 },
+//     // ],
+//     duration: '2m',
+//
+//     discardResponseBodies: true,
+//
+//     summaryTrendStats: [
+//         'avg',
+//         'min',
+//         'med',
+//         'p(90)',
+//         'p(95)',
+//         'p(99)',
+//         'max',
+//     ],
+// };
+
 export const options = {
-    vus: 100,
-    // stages: [
-    //     { duration: '10s', target: 50 },
-    //     { duration: '30s', target: 50 },
-    //     { duration: '5s', target: 0 },
-    // ],
-    // duration: '60s',
-    duration: '2m',
+    scenarios: {
+        load: {
+            executor: 'constant-arrival-rate',
+
+            rate: 3500,
+            timeUnit: '1s',
+
+            duration: '2m',
+
+            preAllocatedVUs: 500,
+            maxVUs: 1000,
+        },
+    },
 
     discardResponseBodies: true,
 
@@ -37,7 +75,7 @@ export const options = {
 
 export default function () {
     const res = http.get(
-        'http://localhost:8080/api/orders/01a0dd98-0ca1-728b-a209-9be1112bb332'
+        `${baseUrl}/api/orders/01a0dd98-0ca1-728b-a209-9be1112bb332`
     );
 
     if (res.status === 0) {
