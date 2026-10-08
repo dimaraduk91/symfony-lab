@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller\Order;
 
+use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class OrderControllerTest extends WebTestCase
@@ -37,17 +38,37 @@ final class OrderControllerTest extends WebTestCase
     public function testCreateAcceptsAValidOrderPayload(): void
     {
         $client = static::createClient();
+        $connection = static::getContainer()->get(Connection::class);
+        self::assertInstanceOf(Connection::class, $connection);
+        $connection->executeStatement(<<<'SQL'
+            INSERT INTO customers (id, email, created_at)
+            VALUES ('00000000-0000-7000-8000-000000000011', 'order-test@example.test', CURRENT_TIMESTAMP)
+            ON CONFLICT DO NOTHING
+            SQL);
+        $connection->executeStatement(<<<'SQL'
+            INSERT INTO products (id, title, created_at)
+            VALUES ('00000000-0000-7000-8000-000000000012', 'Order test product', CURRENT_TIMESTAMP)
+            ON CONFLICT DO NOTHING
+            SQL);
+        $connection->executeStatement(<<<'SQL'
+            INSERT INTO sellers (id, name, created_at)
+            VALUES ('00000000-0000-7000-8000-000000000013', 'Order test seller', CURRENT_TIMESTAMP)
+            ON CONFLICT DO NOTHING
+            SQL);
 
         $client->request(
             'POST',
             '/api/orders',
-            server: ['CONTENT_TYPE' => 'application/json'],
+            server: [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_IDEMPOTENCY_KEY' => 'order-controller-test-create',
+            ],
             content: json_encode([
-                'customerId' => 'customer-123',
+                'customerId' => '00000000-0000-7000-8000-000000000011',
                 'currency' => 'USD',
                 'items' => [[
-                    'productId' => 'product-456',
-                    'sellerId' => 'seller-789',
+                    'productId' => '00000000-0000-7000-8000-000000000012',
+                    'sellerId' => '00000000-0000-7000-8000-000000000013',
                     'quantity' => 2,
                     'price' => 1999,
                 ]],
@@ -55,7 +76,10 @@ final class OrderControllerTest extends WebTestCase
         );
 
         self::assertResponseIsSuccessful();
-        self::assertJsonStringEqualsJsonString('{"status":"success"}', (string) $client->getResponse()->getContent());
+        $response = json_decode((string) $client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('00000000-0000-7000-8000-000000000011', $response['customerId']);
+        self::assertSame('pending', $response['status']);
+        self::assertSame(3998, $response['amount']);
     }
 
     public function testCreateRejectsAnInvalidOrderPayload(): void

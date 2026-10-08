@@ -17,8 +17,8 @@ RUN apt-get update && apt-get install -y \
         mbstring \
         opcache \
         sockets \
-    && pecl install amqp rdkafka \
-    && docker-php-ext-enable amqp rdkafka \
+    && pecl install amqp rdkafka redis \
+    && docker-php-ext-enable amqp rdkafka redis \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

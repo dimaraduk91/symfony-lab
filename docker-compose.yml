@@ -12,12 +12,21 @@ services:
       MESSENGER_TRANSPORT_DSN: "amqp://symfony:symfony@rabbitmq:5672/%2f/async"
       EVENTS_TRANSPORT_DSN: "amqp://symfony:symfony@rabbitmq:5672/%2f/events"
       KAFKA_BROKERS: "kafka:9092"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      OTEL_SERVICE_NAME: "symfony-lab"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4318"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+      OTEL_TRACES_EXPORTER: "otlp"
+      OTEL_PHP_TRACES_PROCESSOR: "simple"
     depends_on:
       db:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   roadrunner:
@@ -36,6 +45,14 @@ services:
       MESSENGER_TRANSPORT_DSN: "amqp://symfony:symfony@rabbitmq:5672/%2f/async"
       EVENTS_TRANSPORT_DSN: "amqp://symfony:symfony@rabbitmq:5672/%2f/events"
       KAFKA_BROKERS: "kafka:9092"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      OTEL_SERVICE_NAME: "symfony-lab"
+      OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=local"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4318"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+      OTEL_TRACES_EXPORTER: "otlp"
+      OTEL_PHP_TRACES_PROCESSOR: "simple"
     depends_on:
       db:
         condition: service_healthy
@@ -43,6 +60,10 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health"]
       interval: 5s
@@ -91,12 +112,24 @@ services:
       RABBITMQ_DEFAULT_PASS: symfony
     ports:
       - "15672:15672"
+      - "127.0.0.1:15692:15692"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
       interval: 5s
       timeout: 5s
+      retries: 10
+    command: ["sh", "-c", "rabbitmq-plugins enable --offline rabbitmq_prometheus && exec docker-entrypoint.sh rabbitmq-server"]
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: symfony_metrics_redis
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
       retries: 10
 
   kafka:
@@ -130,7 +163,71 @@ services:
         condition: service_healthy
     command: ["/opt/kafka/bin/kafka-topics.sh", "--bootstrap-server", "kafka:9092", "--create", "--if-not-exists", "--topic", "order.events", "--partitions", "3", "--replication-factor", "1"]
 
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.17.1
+    container_name: symfony_postgres_exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://symfony:symfony@db:5432/symfony?sslmode=disable"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: symfony_prometheus
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus"]
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      roadrunner:
+        condition: service_healthy
+      postgres-exporter:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+
+  tempo:
+    image: grafana/tempo:2.8.2
+    container_name: symfony_tempo
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    volumes:
+      - ./docker/tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+      - tempo_data:/var/tempo
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.135.0
+    container_name: symfony_otel_collector
+    command: ["--config=/etc/otelcol-contrib/config.yml"]
+    volumes:
+      - ./docker/otel-collector/config.yml:/etc/otelcol-contrib/config.yml:ro
+    depends_on:
+      - tempo
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    container_name: symfony_grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - tempo
+
 volumes:
   postgres_data:
   rabbitmq_data:
   kafka_data:
+  prometheus_data:
+  tempo_data:
+  grafana_data:

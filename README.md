@@ -37,6 +37,14 @@ make rr-logs
 make down
 ```
 
+## Observability
+
+The local stack includes Prometheus, Grafana, OpenTelemetry Collector, Tempo,
+PostgreSQL exporter, RabbitMQ native metrics, JSON application logs and
+request/trace correlation. See [docs/observability.md](docs/observability.md)
+for architecture and operational reference. The approved incremental development
+direction is in [docs/roadmap.md](docs/roadmap.md).
+
 ## Kafka Lab
 
 Kafka is used here as a durable `order.events` domain-event stream. RabbitMQ remains the transport for asynchronous commands/jobs: Kafka is not simply RabbitMQ with higher throughput, and it does not replace RabbitMQ in this project.

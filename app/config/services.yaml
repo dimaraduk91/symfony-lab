@@ -8,6 +8,8 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     kafka.brokers: '%env(KAFKA_BROKERS)%'
+    redis.host: '%env(REDIS_HOST)%'
+    redis.port: '%env(int:REDIS_PORT)%'
 
 services:
     # default configuration for services in *this* file
@@ -29,50 +31,27 @@ services:
         arguments:
             $brokers: '%kafka.brokers%'
 
+    Prometheus\CollectorRegistry:
+        factory: ['App\Shared\Infrastructure\Observability\ObservabilityFactory', 'createMetricsRegistry']
+        lazy: true
+        arguments:
+            $host: '%redis.host%'
+            $port: '%redis.port%'
+
+    OpenTelemetry\SDK\Trace\TracerProviderInterface:
+        factory: ['App\Shared\Infrastructure\Observability\ObservabilityFactory', 'createTracerProvider']
+
+    OpenTelemetry\API\Trace\TracerInterface:
+        factory: ['@OpenTelemetry\SDK\Trace\TracerProviderInterface', 'getTracer']
+        arguments: ['symfony-lab']
+
+    App\Shared\Infrastructure\Observability\CorrelationLogProcessor:
+        tags:
+            - { name: monolog.processor }
+
 #    App\Ordering\Application\CreateOrder:
 #        arguments:
 #            $eventBus: '@event.bus'
 
 #    app:
 #        order_validator:
-
-framework:
-    messenger:
-        serializer:
-            default_serializer: messenger.transport.symfony_serializer
-            symfony_serializer:
-                format: json
-                context: { }
-        failure_transport: failed
-        buses:
-            event.bus:
-                default_middleware:
-                    allow_no_handlers: true
-        transports:
-#            events:
-#                dsn: '%env(EVENTS_TRANSPORT_DSN)%'
-            async:
-                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
-                serializer: messenger.transport.symfony_serializer
-                retry_strategy:
-                    max_retries: 3
-                    delay: 1000
-                    multiplier: 2
-                    max_delay: 10000
-                    jitter: 0.1
-            failed:
-                dsn: 'doctrine://default?queue_name=failed'
-#        routing:
-#            'App\Ordering\Domain\Event\OrderCreated': events
-
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
-#doctrine:
-#    orm:
-#        mappings:
-#            Ordering:
-#                is_bundle: false
-#                type: attribute
-#                dir: '%kernel.project_dir%/src/Ordering/Domain/Model'
-#                prefix: 'App\Ordering\Domain\Model'
-#                alias: Ordering

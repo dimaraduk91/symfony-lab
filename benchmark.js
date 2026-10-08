@@ -2,6 +2,7 @@ import http from 'k6/http';
 import { Counter } from 'k6/metrics';
 
 const baseUrl = (__ENV.BASE_URL || 'http://localhost:8080').replace(/\/$/, '');
+const orderId = __ENV.ORDER_ID || '01a0dd98-0ca1-728b-a209-9be1112bb332';
 
 const status0 = new Counter('status_0');
 const status2xx = new Counter('status_2xx');
@@ -50,13 +51,14 @@ export const options = {
         load: {
             executor: 'constant-arrival-rate',
 
-            rate: 3500,
+            rate: Number(__ENV.RATE || 3500),
             timeUnit: '1s',
 
-            duration: '2m',
+            duration: __ENV.DURATION || '30s',
+            // duration: __ENV.DURATION || '2m',
 
-            preAllocatedVUs: 500,
-            maxVUs: 1000,
+            preAllocatedVUs: Number(__ENV.PRE_ALLOCATED_VUS || 500),
+            maxVUs: Number(__ENV.MAX_VUS || 1000),
         },
     },
 
@@ -75,7 +77,7 @@ export const options = {
 
 export default function () {
     const res = http.get(
-        `${baseUrl}/api/orders/01a0dd98-0ca1-728b-a209-9be1112bb332`
+        `${baseUrl}/api/orders/${orderId}`
     );
 
     if (res.status === 0) {
