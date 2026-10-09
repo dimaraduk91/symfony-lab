@@ -1,3 +1,5 @@
+FROM ghcr.io/roadrunner-server/roadrunner:2025.1.15 AS roadrunner
+
 FROM php:8.3-fpm
 
 RUN apt-get update && apt-get install -y \
@@ -23,5 +25,6 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=roadrunner /usr/bin/rr /usr/local/bin/rr
 
 WORKDIR /var/www/html

@@ -1,4 +1,4 @@
-.PHONY: up down restart build bash console test composer install rr-install rr-direct-up rr-benchmark logs rr-logs ps rr-version
+.PHONY: up down restart build bash console test composer install rr-direct-up rr-benchmark logs rr-logs ps rr-version
 
 up:
 	docker compose up -d
@@ -26,9 +26,6 @@ composer:
 install:
 	docker compose run --rm --no-deps php composer install
 
-rr-install:
-	docker compose run --rm --no-deps php vendor/bin/rr get --location bin/ --no-config --no-interaction
-
 rr-direct-up:
 	docker compose stop nginx php
 	docker compose up -d --build roadrunner
@@ -46,7 +43,7 @@ ps:
 	docker compose ps
 
 rr-version:
-	docker compose exec roadrunner bin/rr --version
+	docker compose exec roadrunner rr --version
 
 %:
 	@:

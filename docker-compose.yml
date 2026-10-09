@@ -35,7 +35,7 @@ services:
       dockerfile: Dockerfile
     container_name: symfony_roadrunner
     working_dir: /var/www/html
-    command: ["sh", "-c", "php bin/console cache:clear && exec bin/rr serve -c .rr.yaml"]
+    command: ["sh", "-c", "php bin/console cache:clear && exec rr serve -c .rr.yaml"]
     ports:
       - "127.0.0.1:8081:8080"
     volumes:
